@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import connectFourService from "./utilities/connectFourService";
 import socketService from "./utilities/socketService";
 
-// Main Connect Four App Component
 function ConnectFourApp() {
   const [username, setUsername] = useState("");
   const [roomCode, setRoomCode] = useState("");
