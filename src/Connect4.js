@@ -1,29 +1,50 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import connectFourService from './utilities/connectFourService';
-import socketService from './utilities/socketService';
+import React, { useState, useEffect, useCallback } from "react";
+import connectFourService from "./utilities/connectFourService";
+import socketService from "./utilities/socketService";
 
 // Main Connect Four App Component
 function ConnectFourApp() {
-  const [username, setUsername] = useState('');
-  const [roomCode, setRoomCode] = useState('');
+  const [username, setUsername] = useState("");
+  const [roomCode, setRoomCode] = useState("");
   const [gameState, setGameState] = useState(null);
-  const [currentPlayer, setCurrentPlayer] = useState('');
-  const [message, setMessage] = useState('');
-  const [gamePhase, setGamePhase] = useState('login'); // login, waiting, playing, gameover
+  const [currentPlayer, setCurrentPlayer] = useState("");
+  const [message, setMessage] = useState("");
+  const [gamePhase, setGamePhase] = useState("login"); // login, waiting, playing, gameover
   const [isLoading, setIsLoading] = useState(false);
+
+  const updateGameState = useCallback(
+    (data) => {
+      setGameState(data);
+      setCurrentPlayer(data.currentPlayer);
+
+      if (data.winner) {
+        setGamePhase("gameover");
+        setMessage(
+          data.winner === username ? "You won!" : `${data.winner} won!`
+        );
+      } else if (data.draw) {
+        setGamePhase("gameover");
+        setMessage("It's a draw!");
+      } else {
+        setGamePhase("playing");
+      }
+    },
+    [username]
+  );
 
   // Connect to socket on component mount
   useEffect(() => {
     // Initialize socket connection
-    socketService.connect()
-      .on('game_played', (data) => {
+    socketService
+      .connect()
+      .on("game_played", (data) => {
         updateGameState(data);
       })
-      .on('player_left', (data) => {
+      .on("player_left", (data) => {
         setMessage(`${data.username} has left the game`);
         // Redirect to home after 3 seconds
         setTimeout(() => {
-          setGamePhase('login');
+          setGamePhase("login");
           setGameState(null);
         }, 3000);
       });
@@ -41,43 +62,28 @@ function ConnectFourApp() {
     }
   }, [roomCode]);
 
-  const updateGameState = useCallback((data) => {
-    setGameState(data);
-    setCurrentPlayer(data.currentPlayer);
-    
-    if (data.winner) {
-      setGamePhase('gameover');
-      setMessage(data.winner === username ? 'You won!' : `${data.winner} won!`);
-    } else if (data.draw) {
-      setGamePhase('gameover');
-      setMessage("It's a draw!");
-    } else {
-      setGamePhase('playing');
-    }
-  },[username]);
-
   const showError = (error) => {
     console.error(error);
-    setMessage('Error connecting to server. Please try again.');
+    setMessage("Error connecting to server. Please try again.");
     setIsLoading(false);
   };
 
   const handleHostGame = async (e) => {
     e.preventDefault();
     if (!username.trim()) {
-      setMessage('Please enter a username');
+      setMessage("Please enter a username");
       return;
     }
 
     setIsLoading(true);
     try {
       const data = await connectFourService.hostGame(username);
-      
+
       if (data.status.code === 0) {
         setRoomCode(data.room_code);
         setGameState(data);
         setCurrentPlayer(data.currentPlayer);
-        setGamePhase('waiting');
+        setGamePhase("waiting");
         setMessage(`Game created! Share code: ${data.room_code}`);
       } else {
         setMessage(data.status.message);
@@ -92,18 +98,18 @@ function ConnectFourApp() {
   const handleJoinGame = async (e) => {
     e.preventDefault();
     if (!username.trim() || !roomCode.trim()) {
-      setMessage('Please enter username and room code');
+      setMessage("Please enter username and room code");
       return;
     }
 
     setIsLoading(true);
     try {
       const data = await connectFourService.joinGame(roomCode, username);
-      
+
       if (data.status.code === 0) {
         setGameState(data);
         setCurrentPlayer(data.currentPlayer);
-        setGamePhase('playing');
+        setGamePhase("playing");
       } else {
         setMessage(data.status.message);
       }
@@ -116,8 +122,11 @@ function ConnectFourApp() {
 
   const handleColumnClick = async (columnIndex) => {
     // Check if it's player's turn and column is not full
-    if (gamePhase !== 'playing' || currentPlayer !== username || 
-        (gameState.board && gameState.board[0][columnIndex] !== 0)) {
+    if (
+      gamePhase !== "playing" ||
+      currentPlayer !== username ||
+      (gameState.board && gameState.board[0][columnIndex] !== 0)
+    ) {
       return;
     }
 
@@ -136,7 +145,7 @@ function ConnectFourApp() {
     setIsLoading(true);
     try {
       const data = await connectFourService.playAgain(roomCode);
-      
+
       if (data.status.code === 0) {
         updateGameState(data);
       } else {
@@ -153,11 +162,11 @@ function ConnectFourApp() {
     setIsLoading(true);
     try {
       const data = await connectFourService.leaveGame(roomCode, username);
-      
+
       if (data.status.code === 0) {
-        setGamePhase('login');
+        setGamePhase("login");
         setGameState(null);
-        setRoomCode('');
+        setRoomCode("");
       } else {
         setMessage(data.status.message);
       }
@@ -169,7 +178,7 @@ function ConnectFourApp() {
   };
 
   // Render Login/Join screen
-  if (gamePhase === 'login') {
+  if (gamePhase === "login") {
     return (
       <div className="connect-four-container">
         <h1>Connect Four</h1>
@@ -186,11 +195,11 @@ function ConnectFourApp() {
                 disabled={isLoading}
               />
               <button type="submit" disabled={isLoading}>
-                {isLoading ? 'Creating...' : 'Create Game'}
+                {isLoading ? "Creating..." : "Create Game"}
               </button>
             </form>
           </div>
-          
+
           <div className="form-section">
             <h2>Join a Game</h2>
             <form onSubmit={handleJoinGame}>
@@ -211,7 +220,7 @@ function ConnectFourApp() {
                 disabled={isLoading}
               />
               <button type="submit" disabled={isLoading}>
-                {isLoading ? 'Joining...' : 'Join Game'}
+                {isLoading ? "Joining..." : "Join Game"}
               </button>
             </form>
           </div>
@@ -219,23 +228,25 @@ function ConnectFourApp() {
         {message && <div className="message">{message}</div>}
       </div>
     );
-  } 
+  }
   // Render Waiting for opponent screen
-  else if (gamePhase === 'waiting') {
+  else if (gamePhase === "waiting") {
     return (
       <div className="connect-four-container">
         <h1>Connect Four</h1>
         <div className="waiting-room">
           <h2>Waiting for Opponent</h2>
-          <p>Share this room code with your friend: <strong>{roomCode}</strong></p>
+          <p>
+            Share this room code with your friend: <strong>{roomCode}</strong>
+          </p>
           <button onClick={handleLeaveGame} disabled={isLoading}>
-            {isLoading ? 'Leaving...' : 'Leave Game'}
+            {isLoading ? "Leaving..." : "Leave Game"}
           </button>
         </div>
         {message && <div className="message">{message}</div>}
       </div>
     );
-  } 
+  }
   // Render Game board screen (playing or game over)
   else {
     return (
@@ -246,51 +257,64 @@ function ConnectFourApp() {
           <p>Player: {username}</p>
           <p>Current Turn: {currentPlayer}</p>
         </div>
-        
+
         {message && <div className="message">{message}</div>}
-        
-        {isLoading && <div className="loading-indicator">Processing move...</div>}
-        
+
+        {isLoading && (
+          <div className="loading-indicator">Processing move...</div>
+        )}
+
         <div className="game-board">
-          {gameState && gameState.board && gameState.board.map((row, rowIndex) => (
-            <div key={rowIndex} className="board-row">
-              {row.map((cell, colIndex) => (
-                <div 
-                  key={colIndex} 
-                  className="board-cell"
-                  onClick={() => handleColumnClick(colIndex)}
-                >
-                  {cell !== 0 && (
-                    <div 
-                      className={`disc ${cell === 1 ? 'red' : 'yellow'}`} 
-                      title={gameState.players && gameState.players[cell === 1 ? 0 : 1]}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
-          
+          {gameState &&
+            gameState.board &&
+            gameState.board.map((row, rowIndex) => (
+              <div key={rowIndex} className="board-row">
+                {row.map((cell, colIndex) => (
+                  <div
+                    key={colIndex}
+                    className="board-cell"
+                    onClick={() => handleColumnClick(colIndex)}
+                  >
+                    {cell !== 0 && (
+                      <div
+                        className={`disc ${cell === 1 ? "red" : "yellow"}`}
+                        title={
+                          gameState.players &&
+                          gameState.players[cell === 1 ? 0 : 1]
+                        }
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+
           {/* Column hover indicators - only active when it's player's turn */}
           <div className="column-indicators">
-            {gameState && gameState.board && gameState.board[0].map((_, colIndex) => (
-              <div 
-                key={colIndex} 
-                className={`column-indicator ${currentPlayer === username && gamePhase === 'playing' ? 'active' : ''}`}
-                onClick={() => handleColumnClick(colIndex)}
-              />
-            ))}
+            {gameState &&
+              gameState.board &&
+              gameState.board[0].map((_, colIndex) => (
+                <div
+                  key={colIndex}
+                  className={`column-indicator ${
+                    currentPlayer === username && gamePhase === "playing"
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() => handleColumnClick(colIndex)}
+                />
+              ))}
           </div>
         </div>
-        
+
         <div className="game-controls">
-          {gamePhase === 'gameover' && (
+          {gamePhase === "gameover" && (
             <button onClick={handlePlayAgain} disabled={isLoading}>
-              {isLoading ? 'Starting...' : 'Play Again'}
+              {isLoading ? "Starting..." : "Play Again"}
             </button>
           )}
           <button onClick={handleLeaveGame} disabled={isLoading}>
-            {isLoading ? 'Leaving...' : 'Leave Game'}
+            {isLoading ? "Leaving..." : "Leave Game"}
           </button>
         </div>
       </div>

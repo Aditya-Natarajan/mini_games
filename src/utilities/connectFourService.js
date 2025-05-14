@@ -1,11 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Base API configuration with proxy handling
 const API = axios.create({
-    baseURL:'/connectFour.php',
+  baseURL: "/connectFourAPI.php",
   headers: {
-    'Content-Type': 'application/json',
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 /**
@@ -20,9 +20,9 @@ const connectFourService = {
    */
   hostGame: async (username) => {
     try {
-      const response = await API.post('', {
+      const response = await API.post("", {
         serviceID: 1,
-        username
+        username,
       });
       return response.data;
     } catch (error) {
@@ -39,10 +39,10 @@ const connectFourService = {
    */
   joinGame: async (roomCode, username) => {
     try {
-      const response = await API.post('', {
+      const response = await API.post("", {
         serviceID: 2,
         room_code: roomCode,
-        username
+        username,
       });
       return response.data;
     } catch (error) {
@@ -60,11 +60,11 @@ const connectFourService = {
    */
   playGame: async (roomCode, column, username) => {
     try {
-      const response = await API.post('', {
+      const response = await API.post("", {
         serviceID: 3,
         room_code: roomCode,
         column,
-        username
+        username,
       });
       return response.data;
     } catch (error) {
@@ -81,10 +81,10 @@ const connectFourService = {
    */
   leaveGame: async (roomCode, username) => {
     try {
-      const response = await API.post('', {
+      const response = await API.post("", {
         serviceID: 4,
         room_code: roomCode,
-        username
+        username,
       });
       return response.data;
     } catch (error) {
@@ -100,16 +100,16 @@ const connectFourService = {
    */
   playAgain: async (roomCode) => {
     try {
-      const response = await API.post('', {
+      const response = await API.post("", {
         serviceID: 5,
-        room_code: roomCode
+        room_code: roomCode,
       });
       return response.data;
     } catch (error) {
       handleApiError(error);
       throw error;
     }
-  }
+  },
 };
 
 /**
@@ -120,13 +120,13 @@ const handleApiError = (error) => {
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
-    console.error('Server error:', error.response.data);
+    console.error("Server error:", error.response.data);
   } else if (error.request) {
     // The request was made but no response was received
-    console.error('Network error - no response received');
+    console.error("Network error - no response received");
   } else {
     // Something happened in setting up the request that triggered an Error
-    console.error('Request error:', error.message);
+    console.error("Request error:", error.message);
   }
 };
 
